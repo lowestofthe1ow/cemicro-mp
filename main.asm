@@ -1,0 +1,36 @@
+PRG_START   EQU $F000
+
+; PORTA	    EQU $1000 ; PORTA controls OE'
+PORTB       EQU $1004 ; PORTB controls 2764 address lines
+PORTC       EQU $1003 ; PORTC receives data from 2764
+
+; Serial communications
+; https://controls.ame.nd.edu/microcontroller/main/node25.html
+SCSR        EQU $102E ; Status register, TDRE is bit 7
+SCDR        EQU $102F
+
+    ORG PRG_START
+START       CLRA
+            
+LOOP        STAA PORTB ; Store address A4...A0
+            ; If connecting OE' to PORTA, set OE' to LOW here
+
+            ; Fastest 68HC11 instruction takes about 965ns
+            ; This is slow enough for 2764 t_OE <= 100ns
+            INCA
+            
+            ; DATA SHOULD BE VALID BY THIS POINT
+
+            LDAB PORTC ; Read one byte from the EPROM
+            STAB SCDR ; Writeback the byte to serial data register
+
+            ; Wait for SCI transmit buffer to be empty
+            ; This means byte was transmitted successfully
+            ; Bit mask of #$80 looks at bit 7 (TDRE) of SCSR
+WAIT_SCI    BRSET SCSR #$80 WAIT_SCI
+            
+            ; If connecting OE' to PORTA, set OE' back to HIGH here
+
+            CMPA #25
+            BNE LOOP
+            STOP
