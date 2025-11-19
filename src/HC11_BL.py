@@ -136,7 +136,6 @@ def main(argv):
         byte = ser.read()
         if byte:
             print(f"[{i}] {hex(ord(byte))}")
-            i += 1
         else:
             print("Error in received data - aborting.")
             break
