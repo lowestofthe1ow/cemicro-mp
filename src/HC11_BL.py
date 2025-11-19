@@ -129,6 +129,8 @@ def main(argv):
         print("\n\n")
         print("Done - HC11 should be running your machine code in RAM now.")
 
+    print("Reading first 25 bytes from the EPROM...")
+
     # Print 25 bytes
     for i in range(25):
         byte = ser.read()

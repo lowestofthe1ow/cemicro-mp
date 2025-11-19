@@ -1,4 +1,4 @@
-PRG_START   EQU $F000
+PRG_START   EQU $0000 ; Internal ROM start
 
 ; PORTA	    EQU $1000 ; PORTA controls OE'
 PORTB       EQU $1004 ; PORTB controls 2764 address lines
@@ -24,10 +24,11 @@ LOOP        STAA PORTB ; Store address A4...A0
             LDAB PORTC ; Read one byte from the EPROM
             STAB SCDR ; Writeback the byte to serial data register
 
-            ; Wait for SCI transmit buffer to be empty
+            ; Wait for SCI transmit buffer to be empty (TDRE == 1)
             ; This means byte was transmitted successfully
-            ; Bit mask of #$80 looks at bit 7 (TDRE) of SCSR
-WAIT_SCI    BRSET SCSR #$80 WAIT_SCI
+WAIT_SCI    LDAB SCSR ; Get SCI status register
+            ANDB #$80 ; Bit mask of #$80 looks at bit 7 (TDRE) of SCSR
+            BEQ WAIT_SCI ; If TDRE == 0, go back and wait some more
             
             ; If connecting OE' to PORTA, set OE' back to HIGH here
 
