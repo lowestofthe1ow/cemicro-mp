@@ -118,7 +118,7 @@ def main(argv):
             print(hex(ord(byte)), end=" ")
             j = 255
 
-        while j > 0:
+        while j >= 0:
             byte = ser.read()
             if byte:
                 print(hex(ord(byte)), end=" ")
@@ -134,7 +134,12 @@ def main(argv):
     # Print 25 bytes
     for i in range(25):
         byte = ser.read()
-        print(hex(ord(byte)))
+        if byte:
+            print(f"[{i}] {hex(ord(byte))}")
+            i += 1
+        else:
+            print("Error in received data - aborting.")
+            break
 
     ser.close()
 

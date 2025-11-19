@@ -1,6 +1,6 @@
 PRG_START   EQU $0000 ; Internal ROM start
 
-; PORTA	    EQU $1000 ; PORTA controls OE'
+PORTA	    EQU $1000 ; PORTA controls OE'
 PORTB       EQU $1004 ; PORTB controls 2764 address lines
 PORTC       EQU $1003 ; PORTC receives data from 2764
 
@@ -11,12 +11,13 @@ SCDR        EQU $102F
 
     ORG PRG_START
 START       CLRA
-            
+                 
 LOOP        STAA PORTB ; Store address A4...A0
-            ; If connecting OE' to PORTA, set OE' to LOW here
 
             ; Fastest 68HC11 instruction takes about 965ns
-            ; This is slow enough for 2764 t_OE <= 100ns
+            ; This is slow enough for 2764 t_OE <= 100ns + t_CE <= 250ns
+            CLRB
+            STAB PORTA ; Set CE' and OE' to LOW here
             INCA
             
             ; DATA SHOULD BE VALID BY THIS POINT
@@ -30,7 +31,9 @@ WAIT_SCI    LDAB SCSR ; Get SCI status register
             ANDB #$80 ; Bit mask of #$80 looks at bit 7 (TDRE) of SCSR
             BEQ WAIT_SCI ; If TDRE == 0, go back and wait some more
             
-            ; If connecting OE' to PORTA, set OE' back to HIGH here
+            ; Set OE' and CE' back to HIGH here
+            LDAB #%00110000
+            STAB PORTA
 
             CMPA #25
             BNE LOOP
