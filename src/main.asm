@@ -21,20 +21,27 @@ LOOP        STAA PORTB ; Store address A4...A0
             INCA
             
             ; DATA SHOULD BE VALID BY THIS POINT
-
-            LDAB PORTC ; Read one byte from the EPROM
-            STAB SCDR ; Writeback the byte to serial data register
-
-            ; Wait for SCI transmit buffer to be empty (TDRE == 1)
-            ; This means byte was transmitted successfully
-WAIT_SCI    LDAB SCSR ; Get SCI status register
-            ANDB #$80 ; Bit mask of #$80 looks at bit 7 (TDRE) of SCSR
-            BEQ WAIT_SCI ; If TDRE == 0, go back and wait some more
             
-            ; Set OE' and CE' back to HIGH here
+            
+            
+WAIT_SCI_1  LDAB SCSR ; Get SCI status register
+            ANDB #$80 ; Bit mask of #$80 looks at bit 7 (TDRE) of SCSR
+            BEQ WAIT_SCI_1 ; If TDRE == 0, go back and wait some more
+            
             LDAB #%00110000
             STAB PORTA
-
+            
+            LDAB PORTC ; Read one byte from the EPROM 
+            STAB SCDR ; Writeback the byte to serial data register
+            
+            ; Wait for SCI transmit buffer to be empty (TDRE == 1)
+            ; This means byte was transmitted successfully
+WAIT_SCI_2  LDAB SCSR ; Get SCI status register
+            ANDB #$80 ; Bit mask of #$80 looks at bit 7 (TDRE) of SCSR
+            BEQ WAIT_SCI_2 ; If TDRE == 0, go back and wait some more
+            
+            ; Set OE' and CE' back to HIGH here
+            
             CMPA #25
             BNE LOOP
             STOP
