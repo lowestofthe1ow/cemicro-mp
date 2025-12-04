@@ -11,7 +11,7 @@ SCDR        EQU $102F
 
     ORG PRG_START
 START       CLRA
-                 
+
 LOOP        STAA PORTB ; Store address A4...A0
 
             ; Fastest 68HC11 instruction takes about 965ns
@@ -19,29 +19,22 @@ LOOP        STAA PORTB ; Store address A4...A0
             CLRB
             STAB PORTA ; Set CE' and OE' to LOW here
             INCA
-            
+
             ; DATA SHOULD BE VALID BY THIS POINT
-            
-            
-            
-WAIT_SCI_1  LDAB SCSR ; Get SCI status register
-            ANDB #$80 ; Bit mask of #$80 looks at bit 7 (TDRE) of SCSR
-            BEQ WAIT_SCI_1 ; If TDRE == 0, go back and wait some more
-            
-            LDAB #%00110000
-            STAB PORTA
-            
-            LDAB PORTC ; Read one byte from the EPROM 
+
+            LDAB PORTC ; Read one byte from the EPROM
             STAB SCDR ; Writeback the byte to serial data register
-            
+
             ; Wait for SCI transmit buffer to be empty (TDRE == 1)
             ; This means byte was transmitted successfully
-WAIT_SCI_2  LDAB SCSR ; Get SCI status register
+WAIT_SCI    LDAB SCSR ; Get SCI status register
             ANDB #$80 ; Bit mask of #$80 looks at bit 7 (TDRE) of SCSR
-            BEQ WAIT_SCI_2 ; If TDRE == 0, go back and wait some more
-            
+            BEQ WAIT_SCI ; If TDRE == 0, go back and wait some more
+
             ; Set OE' and CE' back to HIGH here
-            
+            LDAB #%00110000
+            STAB PORTA
+
             CMPA #25
             BNE LOOP
             STOP

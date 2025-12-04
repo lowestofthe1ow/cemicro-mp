@@ -1,8 +1,10 @@
 # Program arguments:  -c /dev/ttyUSB0 -i BOOTLOAD.S19
 
-import sys, getopt
-import serial
+import getopt
+import sys
 import time
+
+import serial
 
 
 def main(argv):
@@ -128,6 +130,10 @@ def main(argv):
                 j = 0
         print("\n\n")
         print("Done - HC11 should be running your machine code in RAM now.")
+
+    # --------------------------------------------------------------------------
+    # Modifications start here
+    # --------------------------------------------------------------------------
 
     print("Reading first 25 bytes from the EPROM...")
 

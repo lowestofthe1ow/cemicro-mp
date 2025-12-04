@@ -1,8 +1,10 @@
 # Program arguments:  -c /dev/ttyUSB0 -i BOOTLOAD.S19
 
-import sys, getopt
-import serial
+import getopt
+import sys
 import time
+
+import serial
 
 
 def main(argv):
@@ -30,7 +32,7 @@ def main(argv):
     print("HC11 Bootload Mode RAM Loader, v0.2 Clem Ong")
     print("Note: this ver limited to 256-byte progs.\n")
 
-    print("Modified for CEMICRO Final Project Part I\n")
+    print("Modified for CEMICRO Final Project\n")
 
     print("Program will use", comport)
     print("Parsing ", s19file, ":", sep="")
@@ -129,10 +131,15 @@ def main(argv):
         print("\n\n")
         print("Done - HC11 should be running your machine code in RAM now.")
 
-    print("Reading first 25 bytes from the EPROM...")
+    # --------------------------------------------------------------------------
+    # Modifications start here
+    # --------------------------------------------------------------------------
+
+    print("Starting here, program will be reading everything that the HC11 sends back.")
+    print("(THIS IS JUST FOR TESTING!)")
 
     # Print 25 bytes
-    for i in range(25):
+    while True:  # Infinite loop fun
         byte = ser.read()
         if byte:
             print(f"[{i}] {hex(ord(byte))}")
