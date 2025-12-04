@@ -2,6 +2,8 @@
 *.S19
 *.CFG
 *.LS
+*.LST
+*.lst
 
 # KiCad.gitignore
 # https://github.com/github/gitignore/blob/master/KiCad.gitignore
