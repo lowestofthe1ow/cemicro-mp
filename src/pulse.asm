@@ -14,20 +14,23 @@ COUNT       RMB 1    ; Loop counter for bytes
     ORG PRG_START
             LDAB #5
 
+
+
 ; ------------------------------------------------------------------------------
 ; Subroutine PULSE
 ; Sends an approx. n-ms pulse at bit 7 of PORTB
-; (6 + (3 + (3 + 3)*332) * n) / 2MHz ~= n*0.9975ms
+; (6 + (3 + (3 + 3) * 332 + 2 + 3) * 5) / 2 MHz ~= n ms
 ;
 ; Parameters:
 ;   ACCB: Duration of pulse in ms
 ; Modifies: ACCA, ACCB, X
 ; ------------------------------------------------------------------------------
 
-            LDAA #$80
-            STAA PORTB      ; 4 cycles
+PULSE       LDAA #$80
+            STAA PORTB
             BSR DELAY_1MS   ; 6 cycles
-            CLRB
+            CLRA            ; 2 cycles
+            STAA PORTB      ; 4 cycles
             RTS             ; 5 cycles
 
 DELAY_1MS   LDX #332        ; 3 cycles

@@ -12,7 +12,8 @@ COUNT       RMB 1    ; Loop counter for bytes
 
     ORG PRG_START
 START       CLRA
-            BSET PORTA, $48  ; Set PROG_EN (Conected to PA6) & OE to high for programming
+            ; 01001000
+            BSET PORTA, #%01110000  ; Set PROG_EN (Conected to PA6) & OE to high for programming
             LDX #DATA ; X points to data table
             LDY #ADDR ; Y points to address table
             
