@@ -5,8 +5,7 @@ PORTB       EQU $1004   ; PORTB controls 2764 address lines
 PORTC       EQU $1003   ; PORTC receives/sends data from/to 2764
 DDRC        EQU $1007   ; PORTC direction pins
 
-DATA        EQU $B001   ; Location to store 25 bytes in on-chip memory
-N           EQU $B000   ; Should contain the current value of n
+DATA        EQU $00E0   ; Location to store 25 bytes in on-chip memory
 
     ORG DATA
             ; 25-element array for the data
@@ -38,6 +37,12 @@ RETRY       PSHA        ; Push current n to stack
 
             LDAA #1     ; ] 1 ms
             BSR PULSE   ; ] pulse
+            
+            NOP
+            NOP
+            NOP
+            NOP
+            NOP
 
             LDAA #$00
             STAA DDRC   ; Set all PORTC pins to input
@@ -67,6 +72,9 @@ NEXT        LDAB #3     ; ACCB = 3, ACCA = n
 SUCCESS     NOP
 
 FAIL        NOP
+
+            LDAA #%00010000
+            STAA PORTA
 
             STOP
 
