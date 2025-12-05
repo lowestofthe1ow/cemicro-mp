@@ -24,7 +24,9 @@ ARRAY       DB $AA, $BB, $CC, $DD, $EE, $AA, $BB, $CC, $DD, $EE
             DB $AA, $BB, $CC, $DD, $EE
 
     ORG PROG
-            BSET PACTL #%00001000   ; Sets PA3 to be an output pin
+            LDAA PACTL
+            ORAA #%00001000
+            STAA PACTL      ; Sets PA3 to be an output pin
 
             ; ------------------------------------------------------------------
             ; TODO: This gets initialized per loop in NEXT_DATA. Do we need to
@@ -47,8 +49,10 @@ NEXT_DATA   XGDX        ; Swap D (ACCA:ACCB) with X. ACCB will contain low X
             STAB PORTB  ; Index X is also the target address on the 2764
             XGDX        ; Swap D and X back to normal
 
+            ; ------------------------------------------------------------------
             ; 2764 Fast Programming Algorithm
             ; https://downloads.reactivemicro.com/Electronics/ROM/2764 EPROM.pdf
+            ; ------------------------------------------------------------------
             LDAA #1     ; Starts at n = 1
 
 RETRY       PSHA        ; Push current n to stack
@@ -106,7 +110,9 @@ RETRY       PSHA        ; Push current n to stack
 
             BRA RETRY
 
+            ; ------------------------------------------------------------------
             ; Overprogram pulse
+            ; ------------------------------------------------------------------
 MATCH       LDAB #3     ; ACCB = 3, ACCA = n
             MUL         ; D = 3n < $100, so ACCA = 0 while ACCB = 3n
             TAB         ; Copies ACCB to ACCA, so ACCA = 3n
@@ -115,7 +121,35 @@ MATCH       LDAB #3     ; ACCB = 3, ACCA = n
             INX         ; Increment the address offset
             CPX #25     ; Address > $18
             BNE NEXT_DATA
+            
+            ; ------------------------------------------------------------------
+            ; Perform a final check if all writes were successful
+            ; ------------------------------------------------------------------
+            CLRB        ; EPROM addess will be in ACCB
+            
+            LDAA #%00011000 ; Set 2764 to READ mode but with output disabled
+            ;       ^^^^ PROG_EN = 0, CE' = 0, OE' = 1, P' = 1
+            STAA PORTA
+            
+CHECK       STAB PORTB  ; Output address at PORTB
 
+            LDAA #%00001000 ; Enable 2764 output
+            ;       ^^^^ PROG_EN = 0, CE' = 0, OE' = 0, P' = 1
+            STAA PORTA
+            
+            INCB        ; 2 cycles @ 2 MHz = 1 us > 2764 t_OE
+
+            ; By this point, data will be on PORTC
+
+            LDAA PORTC      ; Read one byte from the EPROM
+            BSR SEND_SCI    ; Send to SCI
+            
+            CMPA #25
+            BNE CHECK
+
+            ; ------------------------------------------------------------------
+            ; Program end
+            ; ------------------------------------------------------------------
 FAIL        LDAA #%00111000 ; Disables the 2764 EPROM
             ;       ^^^^ PROG_EN = 0, CE' = 1, OE' = 1, P' = 1
             STAA PORTA
