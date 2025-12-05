@@ -139,10 +139,12 @@ def main(argv):
     print("(THIS IS JUST FOR TESTING!)")
 
     # Print 25 bytes
+    i = 0
     while True:  # Infinite loop fun
         byte = ser.read()
         if byte:
             print(f"[{i}] {hex(ord(byte))}")
+            i += 1
         else:
             print("Error in received data, but will keep attempting to read...")
 

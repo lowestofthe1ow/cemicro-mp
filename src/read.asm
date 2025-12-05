@@ -10,31 +10,51 @@ SCSR        EQU $102E ; Status register, TDRE is bit 7
 SCDR        EQU $102F
 
     ORG PRG_START
-START       CLRA
+START       CLRB        ; EPROM addess will be in ACCB
+            
+            LDAA #%00011000 ; Set 2764 to READ mode but with output disabled
+            ;       ^^^^ PROG_EN = 0, CE' = 0, OE' = 1, P' = 1
+            STAA PORTA
 
-LOOP        STAA PORTB ; Store address A4...A0
+CHECK       STAB PORTB  ; Output address at PORTB
 
-            ; Fastest 68HC11 instruction takes about 965ns
-            ; This is slow enough for 2764 t_OE <= 100ns + t_CE <= 250ns
-            CLRB
-            STAB PORTA ; Set CE' and OE' to LOW here
-            INCA
+            LDAA #%00001000 ; Enable 2764 output
+            ;       ^^^^ PROG_EN = 0, CE' = 0, OE' = 0, P' = 1
+            STAA PORTA
+            
+            INCB        ; 2 cycles @ 2 MHz = 1 us > 2764 t_OE
 
-            ; DATA SHOULD BE VALID BY THIS POINT
+            ; By this point, data will be on PORTC
 
-            LDAB PORTC ; Read one byte from the EPROM
-            STAB SCDR ; Writeback the byte to serial data register
+            LDAA PORTC      ; Read one byte from the EPROM
+            BSR SEND_SCI    ; Send to SCI
+            
+            CMPB #25
+            BNE CHECK
+
+            ; ------------------------------------------------------------------
+            ; Program end
+            ; ------------------------------------------------------------------
+FAIL        LDAA #%00111000 ; Disables the 2764 EPROM
+            ;       ^^^^ PROG_EN = 0, CE' = 1, OE' = 1, P' = 1
+            ;STAA PORTA
+
+            STOP
+
+; ------------------------------------------------------------------------------
+; Subroutine SEND_SCI
+; Sends one byte through the HC11's serial communications subsystem
+;
+; Parameters:
+;   ACCA: The byte data to send
+; ------------------------------------------------------------------------------
 
             ; Wait for SCI transmit buffer to be empty (TDRE == 1)
             ; This means byte was transmitted successfully
-WAIT_SCI    LDAB SCSR ; Get SCI status register
-            ANDB #$80 ; Bit mask of #$80 looks at bit 7 (TDRE) of SCSR
-            BEQ WAIT_SCI ; If TDRE == 0, go back and wait some more
-
-            ; Set OE' and CE' back to HIGH here
-            LDAB #%00110000
-            STAB PORTA
-
-            CMPA #25
-            BNE LOOP
-            STOP
+SEND_SCI    STAA SCDR       ; Writeback the byte to serial data register
+            PSHB            ; Save ACCB since it gets overwritten
+WAIT_SCI    LDAB SCSR       ; Get SCI status register
+            ANDB #$80       ; Bit mask of #$80 looks at bit 7 (TDRE) of SCSR
+            BEQ WAIT_SCI    ; If TDRE == 0, go back and wait some more
+            PULB
+            RTS

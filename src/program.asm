@@ -63,7 +63,7 @@ RETRY       PSHA        ; Push current n to stack
 
             LDAA #$FF
             STAA DDRC   ; Set all PORTC pins to output
-
+            
             LDAB DATA,X ; Get first byte to store...
             STAB PORTC  ; ...and place on PORTC
 
@@ -72,6 +72,8 @@ RETRY       PSHA        ; Push current n to stack
 
             LDAA #1     ; 1ms pulse time
             BSR PULSE   ; Send the P' programming pulse (logic low)
+            
+            ;BSR DELAY_LONG
 
             NOP         ; 2 cycles
             NOP         ; 2 cycles (extra for good measure)
@@ -83,6 +85,8 @@ RETRY       PSHA        ; Push current n to stack
             NOP         ; 2 cycles
             NOP         ; 2 cycles (extra for good measure)
                         ; @ 2 MHz = 3000 ns = 3 us >= 2 us 2764 t_QXGL
+                        
+            ;BSR DELAY_LONG   
 
             LDAA #%01001000 ; Enable 2764 output so we can read from it
             ;       ^^^^ PROG_EN = 1, CE' = 0, OE' = 0, P' = 1
@@ -90,13 +94,15 @@ RETRY       PSHA        ; Push current n to stack
             STAA PORTA
 
             NOP ; 2 cycles @ 2 MHz = 1000 ns, slow enough for 2764 t_OE <= 150ns
+            
+            ;BSR DELAY_LONG
 
             ; By this point, PORTC will receive data from 2764. Compare with
             ; ACCB to check if correct data was written
 
             LDAA PORTC      ; Fetch byte from PORTC
 
-            BSR SEND_SCI    ; Send the byte to the SCI for verification
+            ; BSR SEND_SCI    ; Send the byte to the SCI for verification
 
             PULA            ; Retrieve current n from stack
                             ; DO THIS HERE. ACCA = n is REQUIRED for BEQ MATCH
@@ -144,7 +150,7 @@ CHECK       STAB PORTB  ; Output address at PORTB
             LDAA PORTC      ; Read one byte from the EPROM
             BSR SEND_SCI    ; Send to SCI
             
-            CMPA #25
+            CMPB #25
             BNE CHECK
 
             ; ------------------------------------------------------------------
@@ -190,7 +196,7 @@ PULSE       PSHA            ; Save accumulators
             LDAB PORTA      ; To avoid overwriting the other PORTA bits
 
             ;      ____3___
-            ANDB #%00001000 ; Reset bit 3
+            ANDB #%11110111 ; Reset bit 3
             STAB PORTA
             BSR DELAY_NMS   ; 6 cycles, delays by n milliseconds
             ORAB #%00001000 ; 2 cycles, set bit 3 to 1
@@ -216,3 +222,11 @@ DELAY_LOOP  DEX             ; 3 cycles
             DECA            ; 2 cycles
             BNE DELAY_NMS   ; 3 cycles
             RTS             ; 5 cycles
+
+
+DELAY_LONG  PSHX
+            LDX #$FFFF
+DELAY_LOOP2 DEX
+            BNE DELAY_LOOP2
+            PULX
+            RTS
