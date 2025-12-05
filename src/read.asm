@@ -10,25 +10,26 @@ SCSR        EQU $102E ; Status register, TDRE is bit 7
 SCDR        EQU $102F
 
     ORG PRG_START
-START       CLRB        ; EPROM addess will be in ACCB
-            
-            LDAA #%00011000 ; Set 2764 to READ mode but with output disabled
-            ;       ^^^^ PROG_EN = 0, CE' = 0, OE' = 1, P' = 1
-            STAA PORTA
+            CLRB ; EPROM addess will be in ACCB
 
-CHECK       STAB PORTB  ; Output address at PORTB
+            ; Sets PA3 to be an output pin, otherwise P' will float!
+            LDAA PACTL
+            ORAA #%00001000
+            STAA PACTL
 
             LDAA #%00001000 ; Enable 2764 output
             ;       ^^^^ PROG_EN = 0, CE' = 0, OE' = 0, P' = 1
             STAA PORTA
-            
+
+CHECK       STAB PORTB  ; Output address at PORTB
+
             INCB        ; 2 cycles @ 2 MHz = 1 us > 2764 t_OE
 
             ; By this point, data will be on PORTC
 
             LDAA PORTC      ; Read one byte from the EPROM
             BSR SEND_SCI    ; Send to SCI
-            
+
             CMPB #25
             BNE CHECK
 

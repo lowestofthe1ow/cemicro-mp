@@ -1,5 +1,3 @@
-; Suicide note
-
 PROG        EQU $0000   ; Internal ROM start
                         ; $0000-$009C (approx.)
 DATA        EQU $00E0   ; Location to store 25 bytes in on-chip memory
@@ -63,7 +61,7 @@ RETRY       PSHA        ; Push current n to stack
 
             LDAA #$FF
             STAA DDRC   ; Set all PORTC pins to output
-            
+
             LDAB DATA,X ; Get first byte to store...
             STAB PORTC  ; ...and place on PORTC
 
@@ -72,8 +70,6 @@ RETRY       PSHA        ; Push current n to stack
 
             LDAA #1     ; 1ms pulse time
             BSR PULSE   ; Send the P' programming pulse (logic low)
-            
-            ;BSR DELAY_LONG
 
             NOP         ; 2 cycles
             NOP         ; 2 cycles (extra for good measure)
@@ -85,8 +81,6 @@ RETRY       PSHA        ; Push current n to stack
             NOP         ; 2 cycles
             NOP         ; 2 cycles (extra for good measure)
                         ; @ 2 MHz = 3000 ns = 3 us >= 2 us 2764 t_QXGL
-                        
-            ;BSR DELAY_LONG   
 
             LDAA #%01001000 ; Enable 2764 output so we can read from it
             ;       ^^^^ PROG_EN = 1, CE' = 0, OE' = 0, P' = 1
@@ -94,8 +88,6 @@ RETRY       PSHA        ; Push current n to stack
             STAA PORTA
 
             NOP ; 2 cycles @ 2 MHz = 1000 ns, slow enough for 2764 t_OE <= 150ns
-            
-            ;BSR DELAY_LONG
 
             ; By this point, PORTC will receive data from 2764. Compare with
             ; ACCB to check if correct data was written
@@ -127,29 +119,29 @@ MATCH       LDAB #3     ; ACCB = 3, ACCA = n
             INX         ; Increment the address offset
             CPX #25     ; Address > $18
             BNE NEXT_DATA
-            
+
             ; ------------------------------------------------------------------
             ; Perform a final check if all writes were successful
             ; ------------------------------------------------------------------
             CLRB        ; EPROM addess will be in ACCB
-            
+
             LDAA #%00011000 ; Set 2764 to READ mode but with output disabled
             ;       ^^^^ PROG_EN = 0, CE' = 0, OE' = 1, P' = 1
             STAA PORTA
-            
+
 CHECK       STAB PORTB  ; Output address at PORTB
 
             LDAA #%00001000 ; Enable 2764 output
             ;       ^^^^ PROG_EN = 0, CE' = 0, OE' = 0, P' = 1
             STAA PORTA
-            
+
             INCB        ; 2 cycles @ 2 MHz = 1 us > 2764 t_OE
 
             ; By this point, data will be on PORTC
 
             LDAA PORTC      ; Read one byte from the EPROM
             BSR SEND_SCI    ; Send to SCI
-            
+
             CMPB #25
             BNE CHECK
 
@@ -222,11 +214,3 @@ DELAY_LOOP  DEX             ; 3 cycles
             DECA            ; 2 cycles
             BNE DELAY_NMS   ; 3 cycles
             RTS             ; 5 cycles
-
-
-DELAY_LONG  PSHX
-            LDX #$FFFF
-DELAY_LOOP2 DEX
-            BNE DELAY_LOOP2
-            PULX
-            RTS
