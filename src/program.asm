@@ -53,9 +53,9 @@ NEXT_DATA   XGDX        ; Swap D (ACCA:ACCB) with X. ACCB will contain low X
 
 RETRY       PSHA        ; Push current n to stack
 
-            LDAA #%01011000
+            LDAA #%01011000 ; Also turns off VERIFY mode from a previous loop
             ;       ^^^^ PROG_EN = 1, CE' = 0, OE' = 1, P' = 1
-            STAA PORTA
+            STAA PORTA  ; 4 cycles @ 2 MHz > t_GHAX from previous loopp
 
             LDAA #$FF
             STAA DDRC   ; Set all PORTC pins to output
@@ -69,20 +69,28 @@ RETRY       PSHA        ; Push current n to stack
             LDAA #1     ; 1ms pulse time
             BSR PULSE   ; Send the P' programming pulse (logic low)
 
-            LDAA #$00
+            NOP         ; 2 cycles
+            NOP         ; 2 cycles (extra for good measure)
+            LDAA #$00   ; 2 cycles
+                        ; @ 2 MHz = 3000 ns = 3 us >= 2 us 2764 t_PHQX
             STAA DDRC   ; Set all PORTC pins to input
 
-            LDAA #%00001000 ; Enable 2764 output so we can read from it
-            ;       ^^^^ PROG_EN = 0, CE' = 0, OE' = 0, P' = 1
-            ; PROG_EN = 0 will revert PSU to outputting 5V/5V
+            NOP         ; 2 cycles
+            NOP         ; 2 cycles
+            NOP         ; 2 cycles (extra for good measure)
+                        ; @ 2 MHz = 3000 ns = 3 us >= 2 us 2764 t_QXGL
+
+            LDAA #%01001000 ; Enable 2764 output so we can read from it
+            ;       ^^^^ PROG_EN = 1, CE' = 0, OE' = 0, P' = 1
+            ; PROG_EN = 1 while OE' = 0 means 2764 is in VERIFY mode
             STAA PORTA
 
-            NOP ; 2 cycles @ 2 MHz = 1000 ns, slow enough for 2764 t_OE <= 100ns
+            NOP ; 2 cycles @ 2 MHz = 1000 ns, slow enough for 2764 t_OE <= 150ns
 
             ; By this point, PORTC will receive data from 2764. Compare with
             ; ACCB to check if correct data was written
 
-            LDAA PORTC
+            LDAA PORTC      ; Fetch byte from PORTC
 
             BSR SEND_SCI    ; Send the byte to the SCI for verification
 

@@ -144,8 +144,7 @@ def main(argv):
         if byte:
             print(f"[{i}] {hex(ord(byte))}")
         else:
-            print("Error in received data - aborting.")
-            break
+            print("Error in received data, but will keep attempting to read...")
 
     ser.close()
 
